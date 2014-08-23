@@ -47,16 +47,16 @@ def GetActressInfo(actress_page):
                            'place_from', 
                            'intresting', 
                            'actress_image_src',
+			   'actress_page',
                             'fetched_video_map_list': list [ fetched_video_map {'video_name', 'published_date'} ]
                             }
     """
     actress_page_node = lxml.html.fromstring(actress_page) 
-    
     actress_info_node = actress_page_node.xpath("//body[@name='dmm_main']/table[@id='w']/tr/td[@id='mu']")[0]
    
     basic_info_node = actress_info_node.xpath("table[@width='100%'][@border='0'][@align='center']")[0]
     actress_name = (basic_info_node.xpath("tr/td/table/tr/td[@class='t1']/h1")[0]).text
-    actress_image_src = basic_info_node.xpath("tr/td/table/tr/td/img[@src]")[0]  #  顔写真のurlを取得
+    actress_image_src = basic_info_node.xpath("tr/td/table[@class='w100']/tr[@class='area-av30 top']/td[@style='padding:15px 50px 15px 12px;']/img[@src]")[0]  #  顔写真のurlを取得
     img_url = actress_image_src.attrib['src']
     actress_info_map = {}
     actress_info_map['actress_name'] = actress_name
@@ -64,7 +64,7 @@ def GetActressInfo(actress_page):
     
     basic_info_map = GetBasicInfo(basic_info_node)
     fetched_video_map_list = GetVideoInfo(actress_info_node)
-   
+    
     actress_info_map.update(basic_info_map)
     actress_info_map['video_info'] = fetched_video_map_list
 
@@ -76,20 +76,21 @@ def GetVideoInfo(actress_info_node):
     """
     fetched_video_indo_list = []
     
-    video_list_index_list = actress_info_node.xpath("table[@width='100%'][@style='margin-bottom:10px;']/tr/td/a")
-    video_list_url = ['{}{}'.format(page_prefix, link.attrib['href']) for link in video_list_index_list]
-
+    video_list_index_list = actress_info_node.xpath("//table[@width='100%'][@style='margin-bottom:10px;']/tr/td[@style='padding:5px;']/a")
+    video_list_url = [link.attrib['href'] for link in video_list_index_list]
     video_info_url = list(set(video_list_url))
-    video_page_prefix=video_info_url[0].split('page=')[0]
-    video_page_one='{}page=1'.format(video_page_prefix)
-    video_list_url.append(video_page_one) 
-    
+    #video_page_prefix=video_info_url[0].split('page=')[0]
+    #video_page_one='{}page=1'.format(video_page_prefix)
+    #video_list_url.append(video_page_one) 
+   
     for video_info_url in video_list_url:
-        if '#list' in video_info_url: continue
-        
-        video_html = GetTopPage(video_info_url)
+	if '#list' in video_info_url: pass 
+       	else: video_info_url = '{}{}'.format(page_prefix, video_info_url) 
+       
+	if len(video_list_url) > 1: time.sleep(30)  # ビデオページが２ページ以上あったら、sleepを入れる
+
+	video_html = GetTopPage(video_info_url)
         logger.debug('{}'.format(video_info_url))
-        time.sleep(60)
         
         video_info_page_top_node = lxml.html.fromstring(video_html)
         per_video_info_list = video_info_page_top_node.xpath("//body[@name='dmm_main']/table[@id='w']/tr/td[@id='mu']/table[@style='margin-bottom:15px;']/tr")
@@ -106,8 +107,6 @@ def GetVideoInfo(actress_info_node):
 
             fetched_video_indo_list.append(per_video_info_map)
 
-        break
-
     return fetched_video_indo_list
 
 def GetBasicInfo(basic_info_node):
@@ -121,7 +120,7 @@ def GetBasicInfo(basic_info_node):
     intresting = actress_attr_info_list[11].text
 
     tall = None
-    west = None
+    waist = None
     bust = None
     bust_cup = None
     hip = None
@@ -131,8 +130,8 @@ def GetBasicInfo(basic_info_node):
         tall = int(t.strip('T').strip('cm'))
         waist = int(w.strip('W').strip('cm'))
         hip = int(h.strip('H').strip('cm'))
-        bust = int(b.split('cm(')[0].strip('B'))
-        bust_cup = b.split('cm(')[1].strip(')')
+        bust = int(b.split('cm')[0].strip('B'))
+        bust_cup = b.split('cm')[1].strip(')').strip('(')
     except:
         pass
 
@@ -151,7 +150,9 @@ def GetBasicInfo(basic_info_node):
     return basic_info_map
 
 def Main(actress_page):
-    actress_info_map = GetActressInfo(actress_page)
+    html_data = GetTopPage(actress_page)
+    actress_info_map = GetActressInfo(html_data)
+    actress_info_map['actress_page'] = actress_page
 
     return actress_info_map
 

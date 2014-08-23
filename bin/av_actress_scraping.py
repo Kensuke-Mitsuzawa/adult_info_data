@@ -71,7 +71,7 @@ def GetActressIndexPage(top_html_data):
         link_index_list.append(url_link_to_page)
         
         logger.debug('{}'.format(url_link_to_page))      
-        time.sleep(60)
+        time.sleep(30)
     return link_index_list
 
 def UpdateWithAllIndexPage(link_index_list):
@@ -89,7 +89,7 @@ def UpdateWithAllIndexPage(link_index_list):
         all_index_list = all_index_list + next_page_list 
         
         logger.debug('link list is updated')
-        time.sleep(60)
+        time.sleep(30)
     
     return all_index_list 
 
@@ -121,7 +121,8 @@ def ActressPageParser(actress_page_list):
     actress_info_list = []
 
     for actress_index, actress_page in enumerate(actress_page_list):
-       
+      	logger.debug(actress_page)	
+
         actress_info_map = parser.Main(actress_page) 
         actress_info_list.append(actress_info_map) 
         
@@ -132,12 +133,12 @@ def ActressPageParser(actress_page_list):
     return actress_info_list
 
 def Main():
-    top_html_data = GetTopPage(top_page_url)
-    #top_html_data = LoadLocalFile()
-    link_index_list = GetActressIndexPage(top_html_data)
-    all_index_list = UpdateWithAllIndexPage(link_index_list)
-    actress_page_list = IndexPageParser(all_index_list)  # 女優の個人ページ一覧を取得する
-    with codecs.open('all_page.json', 'w', 'utf-8') as f: json.dump(actress_page_list, f, indent=4)
+    #top_html_data = GetTopPage(top_page_url)
+    #link_index_list = GetActressIndexPage(top_html_data)
+    #all_index_list = UpdateWithAllIndexPage(link_index_list)
+    #actress_page_list = IndexPageParser(all_index_list)  # 女優の個人ページ一覧を取得する
+    #with codecs.open('all_page.json', 'w', 'utf-8') as f: json.dump(actress_page_list, f, indent=4)
+    with codecs.open('all_page.json', 'r', 'utf-8') as f: actress_page_list = json.load(f)
     actress_info_list = ActressPageParser(actress_page_list)
 
     with codecs.open(path_to_save_fetched_data, 'w', 'utf-8')  as f: json.dump(actress_info_list, f,
